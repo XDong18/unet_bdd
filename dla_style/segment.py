@@ -177,7 +177,7 @@ def validate(val_loader, model, criterion, eval_score=None, print_freq=10):
         target_var = torch.autograd.Variable(target, volatile=True)
 
         # compute output
-        output = model(input_var)[0]
+        output = model(input_var)
         loss = criterion(output, target_var)
         confusion_matrix.update_matrix(target, output)
 
@@ -267,7 +267,7 @@ def train(train_loader, model, criterion, optimizer, epoch,
         target_var = torch.autograd.Variable(target)
 
         # compute output
-        output = model(input_var)[0]
+        output = model(input_var)
         loss = criterion(output, target_var)
 
         # measure accuracy and record loss
@@ -498,7 +498,7 @@ def test(eval_data_loader, model, num_classes,
     for iter, (image, label, name, size) in enumerate(eval_data_loader):
         data_time.update(time.time() - end)
         image_var = Variable(image, requires_grad=False, volatile=True)
-        final = model(image_var)[0]
+        final = model(image_var)
         _, pred = torch.max(final, 1)
         pred = pred.cpu().data.numpy()
         batch_time.update(time.time() - end)
@@ -575,7 +575,7 @@ def test_ms(eval_data_loader, model, num_classes, scales,
         outputs = []
         for image in images:
             image_var = Variable(image, requires_grad=False, volatile=True)
-            final = model(image_var)[0]
+            final = model(image_var)
             outputs.append(final.data)
         final = sum([resize_4d_tensor(out, w, h) for out in outputs])
         pred = final.argmax(axis=1)
