@@ -357,7 +357,7 @@ def train_seg(args):
         batch_size=4, shuffle=False, num_workers=num_workers,
         pin_memory=True
     )
-    optimizer = torch.optim.SGD(single_model.optim_parameters(),
+    optimizer = torch.optim.SGD(single_model.parameters(),
                                 args.lr,
                                 momentum=args.momentum,
                                 weight_decay=args.weight_decay)
