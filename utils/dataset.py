@@ -69,3 +69,56 @@ class BasicDataset(Dataset):
 class CarvanaDataset(BasicDataset):
     def __init__(self, imgs_dir, masks_dir, scale=1):
         super().__init__(imgs_dir, masks_dir, scale, mask_suffix='_mask')
+
+
+class SegList(torch.utils.data.Dataset):
+    def __init__(self, data_dir, phase, transforms, list_dir=None,
+                 out_name=False, out_size=False, binary=False):
+        self.list_dir = data_dir if list_dir is None else list_dir
+        self.data_dir = data_dir
+        self.out_name = out_name
+        self.phase = phase
+        self.transforms = transforms
+        self.image_list = None
+        self.label_list = None
+        self.bbox_list = None
+        self.out_size = out_size
+        self.binary = binary
+        self.read_lists()
+
+    def __getitem__(self, index):
+        image = Image.open(join(self.data_dir, self.image_list[index]))
+        data = [image]
+        if self.label_list is not None:
+            label_map = Image.open(join(self.data_dir, self.label_list[index]))
+            if self.binary:
+                label_map = Image.fromarray(
+                    (np.array(label_map) > 0).astype(np.uint8))
+            data.append(label_map)
+        if self.bbox_list is not None:
+            data.append(Image.open(join(self.data_dir, self.bbox_list[index])))
+        data = list(self.transforms(*data))
+        if self.out_name:
+            if self.label_list is None:
+                data.append(data[0][0, :, :])
+            data.append(self.image_list[index])
+        if self.out_size:
+            data.append(torch.from_numpy(np.array(image.size, dtype=int)))
+        return tuple(data)
+
+    def __len__(self):
+        return len(self.image_list)
+
+    def read_lists(self):
+        image_path = join(self.list_dir, self.phase + '_images.txt')
+        label_path = join(self.list_dir, self.phase + '_labels.txt')
+        bbox_path = join(self.list_dir, self.phase + '_bboxes.txt')
+        assert exists(image_path)
+        self.image_list = [line.strip() for line in open(image_path, 'r')]
+        if exists(label_path):
+            self.label_list = [line.strip() for line in open(label_path, 'r')]
+            assert len(self.image_list) == len(self.label_list)
+        if exists(bbox_path):
+            self.bbox_list = [line.strip() for line in open(bbox_path, 'r')]
+            assert len(self.image_list) == len(self.bbox_list)
+
